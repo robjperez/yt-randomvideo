@@ -1,0 +1,64 @@
+<html>
+    <script type="module">
+        import { h, render } from 'https://esm.sh/preact';
+        import { useState, useEffect } from 'https://esm.sh/preact/hooks'
+        import htm from 'https://esm.sh/htm';
+
+        // Initialize htm with Preact
+        const html = htm.bind(h);
+
+        const ChannelDisplay = (props) => {
+            const [loading, setLoading] = useState(false);
+
+            const randomVideo = async () => {
+                setLoading(true);
+                const res = await fetch(`/channel/${props.channel}/random`)
+                const randomVideo = await res.json();
+                window.open(randomVideo.url, '_blank');
+                setLoading(false);
+            }
+
+            return html`
+                <h1>${props.channel}</h1>
+                <button onClick=${() => props.onBack()}>Back</button>
+                <button disabled=${loading} onClick='${randomVideo}'>Random video</button>
+                ${loading && html`<h1>Looking for a random video...</h1>`}`
+        }
+
+        const ChannelSelection = () => {
+            const [channels, setChannels] = useState({});
+            const [channelSelected, setChannelSelected] = useState('');
+            useEffect(async () => {
+                const res = await fetch('/channels');
+                const chs = await res.json();
+                setChannels(chs);
+            }, []);
+
+            const selectChannel = (channel) => {
+                console.log('selectChannel', channel);
+                setChannelSelected(channel);
+            }
+
+            if (channelSelected) {
+                return html`<${ChannelDisplay} channel='${channelSelected}' onBack=${() => setChannelSelected('')}/>`
+            }
+
+            return html`
+                <h1>Welcome to random video web app</h1>
+                Please select a channel
+                ${
+                    Object.entries(channels).map(([k, v]) => {
+                        return html`<h1 onClick='${() => selectChannel(k)}'>${k}</h1>`
+                    })
+                }`;
+        }
+
+        function App () {
+          return html`<${ChannelSelection}/>`;
+        }
+
+        render(html`<${App}/>`, document.body);
+      </script>
+    <body>
+    </body>
+</html>
