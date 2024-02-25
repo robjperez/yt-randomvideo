@@ -1,4 +1,9 @@
+<!DOCTYPE html>
 <html>
+    <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma-rtl.min.css">
+
     <script type="module">
         import { h, render } from 'https://esm.sh/preact';
         import { useState, useEffect } from 'https://esm.sh/preact/hooks'
@@ -19,10 +24,30 @@
             }
 
             return html`
-                <h1>${props.channel}</h1>
-                <button onClick=${() => props.onBack()}>Back</button>
-                <button disabled=${loading} onClick='${randomVideo}'>Random video</button>
-                ${loading && html`<h1>Looking for a random video...</h1>`}`
+                <section class='section'>
+                    <h1 class='title'>${props.channel}</h1>
+                    <h2 class='subtitle'>Choose an option</h2>
+
+                    <div class='buttons are-small'>
+                        <button class='${"button is-primary is-rounded" + (loading ? " is-loading" : "")}'
+                            disabled=${loading}
+                            onClick='${randomVideo}'>
+                            Random video
+                        </button>
+                        <button class='button is-link is-rounded' onClick=${() => props.onBack()}>Back</button>
+                        <button class='button is-light is-rounded'>Regenarate cache</button>
+
+                    </div>
+                    ${loading &&
+                        html`
+                        <p>
+                            Wait until I find a random video in this channel...
+                        </p>
+                        `
+                    }
+                </section>
+                `;
+
         }
 
         const ChannelSelection = () => {
@@ -44,21 +69,46 @@
             }
 
             return html`
-                <h1>Welcome to random video web app</h1>
-                Please select a channel
+                <div class='content'>
+                    <h3>Select a channel to continue</h3>
+                    <nav class='panel'>
+                        <p class="panel-heading">
+                            Channels
+                        </p>
                 ${
                     Object.entries(channels).map(([k, v]) => {
-                        return html`<h1 onClick='${() => selectChannel(k)}'>${k}</h1>`
+                        return html`
+                            <div class='card' onClick='${() => selectChannel(k)}'>
+                                <div class='card-content'>
+                                    <div class='content'>
+                                        ${k}
+                                    </div>
+                                </div>
+                            </div>`
                     })
-                }`;
+                }
+                    </nav>
+                </div>
+                `;
         }
 
         function App () {
-          return html`<${ChannelSelection}/>`;
+          return html`
+            <div class='container'>
+                <section class="hero is-link">
+                    <div class="hero-body">
+                        <p class="title">
+                        Youtube random video generator
+                        </p>
+                    </div>
+                </section>
+                <${ChannelSelection}/>
+            </div>`;
         }
 
         render(html`<${App}/>`, document.body);
       </script>
+    </head>
     <body>
     </body>
 </html>
