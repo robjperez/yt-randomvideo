@@ -2,13 +2,13 @@ import json
 from flask import Flask, render_template
 import subprocess
 import random
+import configparser
 
-CHANNELS = {
-    'VGL': 'https://www.youtube.com/@VirtualGamingLibrary',
-    'Juanje': 'https://www.youtube.com/@JuanjeJuega',
-    'Slobulus': 'https://www.youtube.com/@slobulus',
-    'AmigaWave': 'https://www.youtube.com/channel/UCItZ9eBgbRdcDnyShojwm9A'
-}
+config = configparser.ConfigParser()
+config.read('channels.ini')
+CHANNELS={s:dict(config.items(s)) for s in config.sections()}["CHANNELS"]
+
+print('Starting server with channels', CHANNELS)
 
 YT_BASE_URL = 'https://www.youtube.com/watch?v='
 
