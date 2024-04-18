@@ -14,12 +14,14 @@
 
         const ChannelDisplay = (props) => {
             const [loading, setLoading] = useState(false);
+            const [videoUrl, setVideoUrl] = useState('');
 
             const randomVideo = async () => {
                 setLoading(true);
                 const res = await fetch(`/channel/${props.channel}/random`)
                 const randomVideo = await res.json();
                 window.open(randomVideo.url, '_blank');
+                setVideoUrl(randomVideo.url);
                 setLoading(false);
             }
 
@@ -45,6 +47,13 @@
                         </p>
                         `
                     }
+                    ${videoUrl &&
+                        html`
+                        <p>
+                            <a href='${videoUrl}' target='_blank'>${videoUrl}</a>
+                        </p>
+                        `
+                    }
                 </section>
                 `;
 
@@ -60,7 +69,6 @@
             }, []);
 
             const selectChannel = (channel) => {
-                console.log('selectChannel', channel);
                 setChannelSelected(channel);
             }
 
