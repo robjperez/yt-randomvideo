@@ -4,6 +4,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma-rtl.min.css">
 
+    <script src="https://www.youtube.com/iframe_api"></script>
+
     <script type="module">
         import { h, render } from 'https://esm.sh/preact';
         import { useState, useEffect } from 'https://esm.sh/preact/hooks'
@@ -50,6 +52,75 @@
 
         }
 
+        const TV = (props) => {
+            const [videoId, setVideoId] = useState('');
+            const [loading, setLoading] = useState(false);
+
+            const playNextVideo = () => {
+                setLoading(true);
+                fetch('/random')
+                    .then(response => response.json())
+                    .then(data => { 
+                        setLoading(false);
+                        const videoId = data.url.split('v=')[1];
+                        setVideoId(videoId);
+                    });
+            }
+
+            useEffect(() => {
+                playNextVideo();
+            }, []);
+
+            useEffect(() => {
+                if (window.YT && videoId) {                    
+                    const player = new window.YT.Player('player', {
+                        height: '390',
+                        width: '640',
+                        videoId: videoId,
+                        host: 'https://www.youtube.com',
+                        events: {
+                            'onReady': onPlayerReady,
+                            'onStateChange': onPlayerStateChange,
+                        },
+                        playerVars: {
+                            origin: window.location,
+                        }
+                    });
+                    console.log(window.YT, videoId, player);
+                }
+            }, [videoId]);
+
+            function onPlayerStateChange(event) {
+               if (event.data === window.YT.PlayerState.ENDED) {
+                fetch('/random')
+                    .then(response => response.json())
+                    .then(data => { 
+                        const videoId = data.url.split('v=')[1];
+                        event.target.loadVideoById(videoId);
+                    });
+                }
+            }
+
+            function onPlayerReady(event) {
+                event.target.playVideo();
+            }
+
+            const nextVideo = () => {
+                playNextVideo();
+            }
+
+            return html`
+                ${loading ? 
+                    html`<p>Finding a random video...</p>` :
+                    html`
+                        <div id="player"></div>
+                        <button class='button is-link is-rounded' onClick=${() => props.onBack()}>Back</button>
+                        <button class='button is-link is-rounded' onClick=${nextVideo}>Next</button>
+                    `
+                }
+            `;
+        }
+
         const ChannelSelection = () => {
             const [channels, setChannels] = useState({});
             const [channelSelected, setChannelSelected] = useState('');
@@ -64,7 +135,9 @@
                 setChannelSelected(channel);
             }
 
-            if (channelSelected) {
+            if (channelSelected === 'TV') {
+                return html`<${TV} onBack=${() => setChannelSelected('')}/>`
+            } else if (channelSelected) {
                 return html`<${ChannelDisplay} channel='${channelSelected}' onBack=${() => setChannelSelected('')}/>`
             }
 
@@ -86,7 +159,16 @@
                                 </div>
                             </div>`
                     })
-                }
+                }                    
+                    </nav>
+                    <nav class='panel'>
+                        <div class='card' onClick='${() => selectChannel('TV')}'>
+                            <div class='card-content'>
+                                <div class='content'>
+                                    YT-Random TV
+                                </div>
+                            </div>
+                        </div>
                     </nav>
                 </div>
                 `;
@@ -95,10 +177,10 @@
         function App () {
           return html`
             <div class='container'>
-                <section class="hero is-link">
+                <section class="hero is-link is-small">
                     <div class="hero-body">
                         <p class="title">
-                        Youtube random video generator
+                            Youtube random video generator
                         </p>
                     </div>
                 </section>
