@@ -8,7 +8,7 @@
 
     <script type="module">
         import { h, render } from 'https://esm.sh/preact';
-        import { useState, useEffect } from 'https://esm.sh/preact/hooks'
+        import { useState, useEffect, useRef } from 'https://esm.sh/preact/hooks'
         import htm from 'https://esm.sh/htm';
 
         // Initialize htm with Preact
@@ -55,9 +55,13 @@
         const TV = (props) => {
             const [videoId, setVideoId] = useState('');
             const [loading, setLoading] = useState(false);
+            const player = useRef(null);
 
             const playNextVideo = () => {
                 setLoading(true);
+                if (player.current) {
+                    player.current.destroy();
+                }                
                 fetch('/random')
                     .then(response => response.json())
                     .then(data => { 
@@ -72,10 +76,11 @@
             }, []);
 
             useEffect(() => {
-                if (window.YT && videoId) {                    
-                    const player = new window.YT.Player('player', {
-                        height: '390',
-                        width: '640',
+                if (window.YT && videoId) {     
+                    const playerHeight = window.innerHeight * 0.6; // 60% of the viewport height               
+                    player.current = new window.YT.Player('player', {
+                        height: playerHeight,
+                        width: '100%',
                         videoId: videoId,
                         host: 'https://www.youtube.com',
                         events: {
@@ -86,7 +91,7 @@
                             origin: window.location,
                         }
                     });
-                    console.log(window.YT, videoId, player);
+
                 }
             }, [videoId]);
 
@@ -111,11 +116,17 @@
 
             return html`
                 ${loading ? 
-                    html`<p>Finding a random video...</p>` :
+                    html`<p class="has-text-centered">Finding a random video...</p>` :
                     html`
-                        <div id="player"></div>
-                        <button class='button is-link is-rounded' onClick=${() => props.onBack()}>Back</button>
-                        <button class='button is-link is-rounded' onClick=${nextVideo}>Next</button>
+                        <div id="player" class="column is-full"></div>
+                        <div class="columns is-centered">
+                            <div class="column is-narrow">
+                                <button class='button is-link is-rounded' onClick=${() => { player.current.destroy(); props.onBack()}}>Back</button>
+                            </div>
+                            <div class="column is-narrow">
+                                <button class='button is-link is-rounded' onClick=${nextVideo}>Next</button>
+                            </div>
+                        </div>
                     `
                 }
             `;
