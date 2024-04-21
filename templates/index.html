@@ -64,14 +64,20 @@
         const TV = (props) => {
             const [videoId, setVideoId] = useState('');
             const [loading, setLoading] = useState(false);
+            const [channels, setChannels] = useState([]);
+            const [selectedChannels, setSelectedChannels] = useState([]);
+
             const player = useRef(null);
 
             const playNextVideo = () => {
+                destroyPlayer();
                 setLoading(true);
-                if (player.current) {
-                    player.current.destroy();
-                }                
-                fetch('/random')
+                if (selectedChannels.length === 0) {
+                    setLoading(false);
+                    return;
+                }
+                const channel = selectedChannels[Math.floor(Math.random() * selectedChannels.length)];
+                fetch(`/channel/${channel}/random`)
                     .then(response => response.json())
                     .then(data => { 
                         setLoading(false);
@@ -81,11 +87,16 @@
             }
 
             useEffect(() => {
-                playNextVideo();
+                fetch('/channels')
+                    .then(response => response.json())
+                    .then(data => {
+                        setChannels(Object.keys(data));
+                        setSelectedChannels(Object.keys(data));
+                    });
             }, []);
 
             useEffect(() => {
-                if (window.YT && videoId) {     
+                if (window.YT && videoId) {
                     const playerHeight = window.innerHeight * 0.6; // 60% of the viewport height               
                     player.current = new window.YT.Player('player', {
                         height: playerHeight,
@@ -106,34 +117,57 @@
 
             function onPlayerStateChange(event) {
                if (event.data === window.YT.PlayerState.ENDED) {
-                fetch('/random')
-                    .then(response => response.json())
-                    .then(data => { 
-                        const videoId = data.url.split('v=')[1];
-                        event.target.loadVideoById(videoId);
-                    });
-                }
+                    playNextVideo();
+               }
             }
 
             function onPlayerReady(event) {
                 event.target.playVideo();
             }
 
-            const nextVideo = () => {
-                playNextVideo();
+            const destroyPlayer = () => {
+                if (player.current) {
+                    player.current.destroy();
+                    player.current = null;
+                }
+            }
+
+            const onBack = () => {
+                destroyPlayer();
+                props.onBack();
+            }
+
+            const onChannelChange = (channel) => {
+                if (selectedChannels.includes(channel)) {
+                    setSelectedChannels(selectedChannels.filter(c => c !== channel));
+                } else {
+                    setSelectedChannels([...selectedChannels, channel]);
+                }
             }
 
             return html`
+                <h2>Please select the channels where the next video will be played from</h2>
+                <div class="columns is-multiline">
+                    ${channels.map(channel => {
+                        return html`
+                        <div class="column is-narrow">
+                            <label class="checkbox">
+                                <input type="checkbox" checked=${selectedChannels.includes(channel)} onChange=${() => onChannelChange(channel)}/>
+                                ${channel}
+                            </label>
+                        </div>`
+                    })}
+                </div>
                 ${loading ? 
                     html`<p class="has-text-centered">Finding a random video...</p>` :
                     html`
                         <div id="player" class="column is-full"></div>
                         <div class="columns is-centered">
                             <div class="column is-narrow">
-                                <button class='button is-link is-rounded' onClick=${() => { player.current.destroy(); props.onBack()}}>Back</button>
+                                <button class='button is-link is-rounded' onClick=${onBack}>Back</button>
                             </div>
                             <div class="column is-narrow">
-                                <button class='button is-link is-rounded' onClick=${nextVideo}>Next</button>
+                                <button class='button is-link is-rounded' onClick=${playNextVideo}>Next</button>
                             </div>
                         </div>
                     `
