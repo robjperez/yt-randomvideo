@@ -69,7 +69,10 @@
 
             const player = useRef(null);
 
-            const playNextVideo = () => {                
+            const playNextVideo = () => {    
+                if (player.current) {
+                    player.current.stopVideo();
+                }
                 setLoading(true);
                 if (selectedChannels.length === 0) {
                     setLoading(false);
