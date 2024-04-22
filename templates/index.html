@@ -69,8 +69,7 @@
 
             const player = useRef(null);
 
-            const playNextVideo = () => {
-                destroyPlayer();
+            const playNextVideo = () => {                
                 setLoading(true);
                 if (selectedChannels.length === 0) {
                     setLoading(false);
@@ -97,21 +96,24 @@
 
             useEffect(() => {
                 if (window.YT && videoId) {
-                    const playerHeight = window.innerHeight * 0.6; // 60% of the viewport height               
-                    player.current = new window.YT.Player('player', {
-                        height: playerHeight,
-                        width: '100%',
-                        videoId: videoId,
-                        host: 'https://www.youtube.com',
-                        events: {
-                            'onReady': onPlayerReady,
-                            'onStateChange': onPlayerStateChange,
-                        },
-                        playerVars: {
-                            origin: window.location,
-                        }
-                    });
-
+                    if (!player.current) {
+                        const playerHeight = window.innerHeight * 0.8; // 80% of the viewport height               
+                        player.current = new window.YT.Player('player', {
+                            height: playerHeight,
+                            width: '100%',
+                            videoId: videoId,
+                            host: 'https://www.youtube.com',
+                            events: {
+                                'onReady': onPlayerReady,
+                                'onStateChange': onPlayerStateChange,
+                            },
+                            playerVars: {
+                                origin: window.location,
+                            }
+                        });
+                    } else {
+                        player.current.loadVideoById(videoId);
+                    }
                 }
             }, [videoId]);
 
@@ -145,6 +147,20 @@
                 }
             }
 
+            const enterFullscreen = () => {
+                const elem = document.getElementById("player");
+
+                if (elem.requestFullscreen) {
+                    elem.requestFullscreen();
+                } else if (elem.mozRequestFullScreen) { /* Firefox */
+                    elem.mozRequestFullScreen();
+                } else if (elem.webkitRequestFullscreen) { /* Chrome, Safari and Opera */
+                    elem.webkitRequestFullscreen();
+                } else if (elem.msRequestFullscreen) { /* IE/Edge */
+                    elem.msRequestFullscreen();
+                }
+            }
+
             return html`
                 <h2>Please select the channels where the next video will be played from</h2>
                 <div class="columns is-multiline">
@@ -158,20 +174,19 @@
                         </div>`
                     })}
                 </div>
-                ${loading ? 
-                    html`<p class="has-text-centered">Finding a random video...</p>` :
-                    html`
-                        <div id="player" class="column is-full"></div>
-                        <div class="columns is-centered">
-                            <div class="column is-narrow">
-                                <button class='button is-link is-rounded' onClick=${onBack}>Back</button>
-                            </div>
-                            <div class="column is-narrow">
-                                <button class='button is-link is-rounded' onClick=${playNextVideo}>Next</button>
-                            </div>
-                        </div>
-                    `
-                }
+                ${loading && html`<p class="has-text-centered">Finding a random video...</p>` }            
+                <div id="player" class="column is-full"></div>
+                <div class="columns is-centered">
+                    <div class="column is-narrow">
+                        <button class='button is-link is-rounded' onClick=${onBack}>Back</button>
+                    </div>
+                    <div class="column is-narrow">
+                        <button class='button is-link is-rounded' onClick=${playNextVideo}>Next</button>
+                    </div>
+                    <div class="column is-narrow">
+                        <button class='button is-link is-rounded' onClick=${enterFullscreen}>Fullscreen</button>
+                    </div>
+                </div>                                    
             `;
         }
 
